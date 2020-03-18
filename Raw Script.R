@@ -18,18 +18,33 @@ library(dplyr)
 
 train_factor <- train %>%
   mutate_at(vars(Label), 
-            funs(factor))
+            funs(factor))   #Transforms the integer variable to a factor variable
 
 str(train_factor)
 
 
 library(C50)
 model <- C5.0(train_factor[-1], train_factor$Label) #Decision tree model
+model
+summary(model)
+
+test = read.csv("a4a_Testing.csv") #the test data is larger than the training data
+table(test$Label)
+test_factor = test %>%
+  mutate_at(vars(Label),
+            funs(factor))
+cv = sapply(test_factor, function(y) class(y)) #confirmation test that the mutation worked
+cv
+
+# Model performance evaluation
+model_pred <- predict(model, test_factor)
+#install.packages("gmodels")
+library(gmodels)
+CrossTable(test_factor$Label, model_pred, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
+           dnn = c('actual', 'predicted')) 
+
+# Model performance improvement - Boosting the accuracy of decision trees
 
 
 
-
-
-
-  
 
