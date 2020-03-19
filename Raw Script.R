@@ -22,13 +22,11 @@ install.packages("C50") #Decision tree algo that implement entropy criterion
 ?c5.0
 
 library(dplyr)
-
 train_factor <- train %>%
   mutate_at(vars(Label), 
             funs(factor))   #Transforms the integer variable to a factor variable
 
 str(train_factor)
-
 
 library(C50)
 model <- C5.0(train_factor[-1], train_factor$Label) #Decision tree model
@@ -58,6 +56,26 @@ model_boost_pred <- predict(model_boost, test_factor)
 CrossTable(test_factor$Label, model_boost_pred, prop.r = F, prop.c = F, prop.chisq = F,
            dnn = c("actual", "predicted"))
 
-# Addressing false negatives - especially in sensitive cases like bank loans
+# Addressing false negatives, especially in sensitive cases like bank loans - cost matrix
+matrix_dim <- list(c("no", "yes"), c("no", "yes"))
+names(matrix_dim) <- c("predicted", "actual")
+matrix_dim
 
- 
+#create the confusion matrix
+error_cost <- matrix(c(0,1,4,0), nrow = 2,
+      dimnames = matrix_dim) #false negative cost the bank 4 times more than false positive
+error_cost #No cost assigned for correct predictions in the confusion matrix
+
+# Apply the error cost correction to the original model
+model_cost <- C5.0(train_factor[,-1], train_factor$Label, costs = error_cost)
+
+model_cost_pred <- predict(model_cost, test_factor) #Error due to data size
+
+
+CrossTable(test_factor$Label, model_cost_pred, prop.c = F,
+           prop.chisq = F, prop.r = F,
+           dnn = c('actual', 'predicted'))
+
+
+
+sum(is.na(train_factor)) #This wasn't accounted for in this analysis
